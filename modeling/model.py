@@ -8,11 +8,11 @@ from transformers.modeling_outputs import TokenClassifierOutput
 class TweetClassificationModel(nn.Module):
     def __init__(self, checkpoint, num_classes):
         self.num_classes = num_classes
-
+        self.model_dim = AutoConfig.from_pretrained(checkpoint).dim
         super(TweetClassificationModel, self).__init__()
         self.distilbert_base = model = AutoModel.from_pretrained(checkpoint)
         self.dropout = nn.Dropout(p=0.1)
-        self.classifier = nn.Linear(768, num_classes)
+        self.classifier = nn.Linear(self.model_dim, num_classes)
 
     def forward(self, input_ids, attention_mask, labels=None):
         outputs = self.distilbert_base(
@@ -23,8 +23,8 @@ class TweetClassificationModel(nn.Module):
 
         sequence_outputs = self.dropout(last_hidden_state)
 
-        logits = self.linear(
-            sequence_outputs[:, 0, :]
+        logits = self.classifier(
+            sequence_outputs[:, 0, :].view(-1, self.model_dim)
         )  # Only taking the hidden state of cls token
 
         loss = None
