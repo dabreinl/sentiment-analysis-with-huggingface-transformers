@@ -1,5 +1,6 @@
 # Folders not to track
 data/
+.vscode/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
