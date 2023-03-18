@@ -8,10 +8,12 @@ from transformers.modeling_outputs import TokenClassifierOutput
 class TweetClassificationModel(nn.Module):
     def __init__(self, checkpoint, num_classes):
         self.num_classes = num_classes
-        self.model_dim = AutoConfig.from_pretrained(checkpoint).dim
+        self.model_dim = AutoConfig.from_pretrained(
+            checkpoint
+        ).hidden_size  # depending on the model config might not be dim but hidden_size
         super(TweetClassificationModel, self).__init__()
         self.distilbert_base = model = AutoModel.from_pretrained(checkpoint)
-        self.dropout = nn.Dropout(p=0.1)
+        self.dropout = nn.Dropout(p=0.3)
         self.classifier = nn.Linear(self.model_dim, num_classes)
 
     def forward(self, input_ids, attention_mask, labels=None):

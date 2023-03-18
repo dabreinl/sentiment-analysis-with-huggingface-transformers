@@ -2,17 +2,20 @@ import torch
 from torch import nn
 from datasets import load_metric
 from tqdm import tqdm
-from sklearn.metrics import accuracy_score, f1_score
+from torchmetrics import Accuracy, F1Score
 
 
-def compute_metrics(predictions, batch):
-    f1 = load_metric("f1")
-    accuracy = load_metric("accuracy")
+def compute_metrics(predictions, batch, num_classes=3, task="multiclass"):
+    predictions = predictions.cpu()
+    true_label = batch["sentiment"].cpu()
 
-    f1.add_batch(predictions=predictions, references=batch["sentiment"])
-    accuracy.add_batch(predictions=predictions, references=batch["sentiment"])
+    f1 = F1Score(task=task, num_classes=num_classes, average="weighted")
+    accuracy = Accuracy(task=task, num_classes=num_classes)
 
-    return {"f1": f1.compute(), "acc": accuracy.compute()}
+    f1_score = f1(predictions, true_label).item()
+    acc_score = accuracy(predictions, true_label).item()
+
+    return {"f1": f1_score, "acc": acc_score}
 
 
 class Model_training:
@@ -24,6 +27,8 @@ class Model_training:
         self.model = self.model.to(self.device)
 
         train_loss = 0
+        f1_score = 0
+        acc_score = 0
 
         for batch in train_dataloader:
             batch = {k: v.to(self.device) for k, v in batch.items()}
@@ -36,26 +41,35 @@ class Model_training:
                 labels=batch["sentiment"],
             )
 
+            predictions = torch.argmax(outputs["logits"], dim=1)
+
             loss = outputs.loss
 
             train_loss += loss.item()
+
+            metrics = compute_metrics(batch=batch, predictions=predictions)
+            f1_score += metrics["f1"]
+            acc_score += metrics["acc"]
 
             optimizer.zero_grad()
 
             loss.backward()
 
             optimizer.step()
+
             if lr_scheduler is not None:
                 lr_scheduler.step()
 
         train_loss = train_loss / len(train_dataloader)
+        f1_score = f1_score / len(train_dataloader)
+        acc_score = acc_score / len(train_dataloader)
 
-        return train_loss
+        return train_loss, f1_score, acc_score
 
     def eval_phase(self, eval_dataloader):
         eval_loss = 0
-        # f1_score = 0
-        # acc_score = 0
+        f1_score = 0
+        acc_score = 0
 
         for batch in eval_dataloader:
             batch = {k: v.to(self.device) for k, v in batch.items()}
@@ -71,26 +85,28 @@ class Model_training:
 
             eval_loss += loss.item()
 
-            logits = outputs.logits
-            predictions = torch.argmax(logits)
+            logits = outputs["logits"]
+            predictions = torch.argmax(logits, dim=1)
 
-            # TODO: see how we can fix
-            # metrics = compute_metrics(predictions, batch)
-            # f1_score += metrics.f1
-            # acc_score += metrics.acc
+            metrics = compute_metrics(batch=batch, predictions=predictions)
+            f1_score += metrics["f1"]
+            acc_score += metrics["acc"]
 
-        # avg_metrics = {"f1": f1_score / len(eval_dataloader),
-        #               "acc": acc_score / len(eval_dataloader),
-        #               "loss": eval_loss / len(eval_dataloader)}
         eval_loss = eval_loss / len(eval_dataloader)
+        f1_score = f1_score / len(eval_dataloader)
+        acc_score = acc_score / len(eval_dataloader)
 
-        return eval_loss
+        return eval_loss, f1_score, acc_score
 
     def train(self, epochs, train_dataloader, eval_dataloader, optimizer):
         for epoch in tqdm(range(epochs)):
-            train_loss = self.train_phase(
+            train_loss, train_f1, train_acc = self.train_phase(
                 optimizer=optimizer, train_dataloader=train_dataloader
             )
-            eval_loss = self.eval_phase(eval_dataloader=eval_dataloader)
+            eval_loss, eval_f1, eval_acc = self.eval_phase(
+                eval_dataloader=eval_dataloader
+            )
 
-            print(f"Epoch: {epoch} | Train Loss: {train_loss} | Test Loss: {eval_loss}")
+            print(
+                f"Epoch {epoch+1}:\nTrain Loss: {train_loss:.5f} | Train F1: {train_f1:.5f} | Train Acc: {train_acc:.5f}\nTest Loss: {eval_loss:.5f} | Test F1: {eval_f1:.5f} | Test Acc: {eval_acc:.5f}\n"
+            )
