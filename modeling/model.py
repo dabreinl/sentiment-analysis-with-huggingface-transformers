@@ -26,7 +26,9 @@ class TweetClassificationModel(nn.Module):
         sequence_outputs = self.dropout(last_hidden_state)
 
         logits = self.classifier(
-            sequence_outputs[:, 0, :].view(-1, self.model_dim)
+            sequence_outputs[:, 0, :].view(
+                -1, self.model_dim
+            )  # this is why argmax(dim=1) gives me the right argmax because we now have a two dimensional tensor
         )  # Only taking the hidden state of cls token
 
         loss = None
