@@ -2,7 +2,8 @@
 data/
 .vscode/
 pre-commit-config.yaml
-.DS_Store
+artifacts/
+modeling/models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

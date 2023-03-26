@@ -5,9 +5,11 @@ from tqdm import tqdm
 from torchmetrics import Accuracy, F1Score
 
 
-def compute_metrics(predictions, batch, num_classes=3, task="multiclass"):
+def compute_metrics(
+    predictions, batch, num_classes=6, task="multiclass"
+):  # TODO remove hardcoding of classes maybe just implement sklearn versions
     predictions = predictions.cpu()
-    true_label = batch["sentiment"].cpu()
+    true_label = batch["labels"].cpu()
 
     f1 = F1Score(task=task, num_classes=num_classes, average="weighted")
     accuracy = Accuracy(task=task, num_classes=num_classes)
@@ -38,7 +40,7 @@ class Model_training:
             outputs = self.model(
                 input_ids=batch["input_ids"],
                 attention_mask=batch["attention_mask"],
-                labels=batch["sentiment"],
+                labels=batch["labels"],
             )
 
             predictions = torch.argmax(outputs["logits"], dim=1)
@@ -78,7 +80,7 @@ class Model_training:
                 outputs = self.model(
                     input_ids=batch["input_ids"],
                     attention_mask=batch["attention_mask"],
-                    labels=batch["sentiment"],
+                    labels=batch["labels"],
                 )
 
             loss = outputs.loss
@@ -98,15 +100,54 @@ class Model_training:
 
         return eval_loss, f1_score, acc_score
 
-    def train(self, epochs, train_dataloader, eval_dataloader, optimizer):
+    def train(
+        self,
+        epochs,
+        train_dataloader,
+        eval_dataloader,
+        optimizer,
+        early_stopper=None,
+        model_save_name=None,
+        scheduler=None,
+    ):
+        results = {
+            "train_loss": [],
+            "train_f1": [],
+            "val_loss": [],
+            "val_f1": [],
+            "lrs": [],
+        }
+
         for epoch in tqdm(range(epochs)):
             train_loss, train_f1, train_acc = self.train_phase(
-                optimizer=optimizer, train_dataloader=train_dataloader
+                optimizer=optimizer,
+                train_dataloader=train_dataloader,
+                lr_scheduler=scheduler,
             )
             eval_loss, eval_f1, eval_acc = self.eval_phase(
                 eval_dataloader=eval_dataloader
             )
+            current_lr = optimizer.param_groups[0]["lr"]
 
             print(
-                f"Epoch {epoch+1}:\nTrain Loss: {train_loss:.5f} | Train F1: {train_f1:.5f} | Train Acc: {train_acc:.5f}\nTest Loss: {eval_loss:.5f} | Test F1: {eval_f1:.5f} | Test Acc: {eval_acc:.5f}\n"
+                f"Epoch {epoch+1}, Current LR: {current_lr}:\nTrain Loss: {train_loss:.5f} | Train F1: {train_f1:.5f} | Train Acc: {train_acc:.5f}\nValidation Loss: {eval_loss:.5f} | Validation F1: {eval_f1:.5f} | Validation Acc: {eval_acc:.5f}\n"
             )
+
+            # Update results dictionary
+            results["train_loss"].append(train_loss)
+            results["train_f1"].append(train_f1)
+            results["val_loss"].append(eval_loss)
+            results["val_f1"].append(eval_f1)
+            results["lrs"].append(current_lr)
+
+            if early_stopper is not None:
+                if early_stopper.early_stop(eval_loss):
+                    print("Stopping Training..")
+                    break
+
+            if model_save_name is not None:
+                torch.save(
+                    self.model.state_dict(), f"modeling/models/{model_save_name}.pth"
+                )
+
+        return results
