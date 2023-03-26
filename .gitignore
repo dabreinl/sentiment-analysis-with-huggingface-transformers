@@ -4,6 +4,7 @@ data/
 pre-commit-config.yaml
 artifacts/
 modeling/models/
+.conda
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
