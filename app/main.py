@@ -5,7 +5,7 @@ from pydantic import BaseModel
 config = {
     "model_checkpoint": "distilbert-base-uncased",
     "class_names": ["sadness", "joy", "love", "anger", "fear", "surprise"],
-    "saved_model_name": "distilbert-base-finetuned-for-tweet-classification-two-additional-epochs",
+    "saved_model_name": "distilbert-base-finetuned-for-tweet-classification",
 }
 
 app = FastAPI()
