@@ -112,4 +112,6 @@ if __name__ == "__main__":
         saved_model_name="distilbert-base-finetuned-for-tweet-classification",
     )
     print("\ntraining model..")
-    results = training.train_model("test-can-be-deleted")
+    results = training.train_model(
+        "distilbert-base-finetuned-for-tweet-classification-five-additional-epochs"
+    )
