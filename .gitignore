@@ -3,7 +3,7 @@ data/
 .vscode/
 pre-commit-config.yaml
 artifacts/
-modeling/models/
+app/modeling/models/
 .conda/
 
 # Byte-compiled / optimized / DLL files

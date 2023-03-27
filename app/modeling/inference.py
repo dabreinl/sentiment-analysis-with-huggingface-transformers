@@ -1,12 +1,12 @@
 import torch
 import transformers
-from modeling.model import TweetClassificationModel
+from app.modeling.model import TweetClassificationModel
 from transformers import AutoModel, AutoTokenizer
 
 
 class Inference:
     def __init__(
-        self, model_checkpoint, labels, saved_model_name, device=torch.device("mps")
+        self, model_checkpoint, labels, saved_model_name, device=torch.device("cpu")
     ):
         self.model_checkpoint = model_checkpoint
         self.labels = labels
@@ -23,7 +23,9 @@ class Inference:
 
     def prediction_pipeline(self, text):
         self.model.load_state_dict(
-            torch.load(f"modeling/models/{self.saved_model_name}.pth")
+            torch.load(
+                f"app/modeling/models/{self.saved_model_name}.pth", map_location="cpu"
+            )
         )
         self.model.to(self.device)
         return self.make_predictions(text)

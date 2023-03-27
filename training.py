@@ -4,15 +4,18 @@ import pandas as pd
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoConfig, AutoModel, DataCollatorWithPadding
 from torch.utils.data import DataLoader
-from modeling.model import TweetClassificationModel
-from modeling.train import Model_training
+from app.modeling.model import TweetClassificationModel
+from app.modeling.train import Model_training
 
 
 class Training:
-    def __init__(self, model_checkpoint, early_stopper=None):
+    def __init__(
+        self, model_checkpoint, early_stopper=None, device=torch.device("mps")
+    ):
         self.model_checkpoint = model_checkpoint
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_checkpoint)
         self.early_stopper = early_stopper
+        self.device = device
 
     def dataloader(self, dataset_name: str):
         self.ds = load_dataset(dataset_name)
@@ -72,18 +75,18 @@ class Training:
 
         if load_model:
             custom_model.load_state_dict(
-                torch.load(f"modeling/models/{saved_model_name}.pth")
+                torch.load(f"app/modeling/models/{saved_model_name}.pth")
             )
 
         self.model = custom_model
 
         return None
 
-    def train_model(self, model_name, lr=1e-5, epochs=5, device=torch.device("mps")):
+    def train_model(self, model_name, lr=1e-5, epochs=2):
         parameters = self.model.parameters()
         optimizer = torch.optim.AdamW(parameters, lr)
 
-        trainer = Model_training(model=self.model, device=device)
+        trainer = Model_training(model=self.model, device=self.device)
 
         train_results = trainer.train(
             train_dataloader=self.train_dataloader,
@@ -113,5 +116,5 @@ if __name__ == "__main__":
     )
     print("\ntraining model..")
     results = training.train_model(
-        "distilbert-base-finetuned-for-tweet-classification-five-additional-epochs"
+        "distilbert-base-finetuned-for-tweet-classification-two-additional-epochs"
     )

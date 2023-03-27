@@ -147,7 +147,8 @@ class Model_training:
 
             if model_save_name is not None:
                 torch.save(
-                    self.model.state_dict(), f"modeling/models/{model_save_name}.pth"
+                    self.model.state_dict(),
+                    f"app/modeling/models/{model_save_name}.pth",
                 )
 
         return results
