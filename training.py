@@ -64,19 +64,22 @@ class Training:
 
         return None
 
-    def load_model(self):
+    def load_model(self, load_model=True, saved_model_name=None):
         model = AutoModel.from_pretrained(self.model_checkpoint)
-        model_config = AutoConfig.from_pretrained(self.model_checkpoint)
-
         custom_model = TweetClassificationModel(
             checkpoint=self.model_checkpoint, num_classes=len(self.class_names)
         )
+
+        if load_model:
+            custom_model.load_state_dict(
+                torch.load(f"modeling/models/{saved_model_name}.pth")
+            )
 
         self.model = custom_model
 
         return None
 
-    def train_model(self, lr=1e-5, epochs=5, device=torch.device("mps")):
+    def train_model(self, model_name, lr=1e-5, epochs=5, device=torch.device("mps")):
         parameters = self.model.parameters()
         optimizer = torch.optim.AdamW(parameters, lr)
 
@@ -88,7 +91,7 @@ class Training:
             optimizer=optimizer,
             epochs=epochs,
             early_stopper=self.early_stopper,
-            model_save_name="test-can-be-deleted",
+            model_save_name=model_name,
         )
 
         return train_results
@@ -104,6 +107,9 @@ if __name__ == "__main__":
     print("\ncreating dataloader..")
     training.create_dataloader(32, training.ds_encoded)
     print("\nloading model..")
-    training.load_model()
+    training.load_model(
+        load_model=True,
+        saved_model_name="distilbert-base-finetuned-for-tweet-classification",
+    )
     print("\ntraining model..")
-    results = training.train_model()
+    results = training.train_model("test-can-be-deleted")
