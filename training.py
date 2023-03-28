@@ -6,6 +6,7 @@ from transformers import AutoTokenizer, AutoConfig, AutoModel, DataCollatorWithP
 from torch.utils.data import DataLoader
 from app.modeling.model import TweetClassificationModel
 from app.modeling.train import Model_training
+from app.modeling.model_utils import EarlyStopper
 
 
 class Training:
@@ -82,7 +83,7 @@ class Training:
 
         return None
 
-    def train_model(self, model_name, lr=1e-5, epochs=2):
+    def train_model(self, model_name, epochs, lr=1e-5):
         parameters = self.model.parameters()
         optimizer = torch.optim.AdamW(parameters, lr)
 
@@ -101,8 +102,9 @@ class Training:
 
 
 if __name__ == "__main__":
+    early_stopper = EarlyStopper()
     print("\ncreating training object..")
-    training = Training("distilbert-base-uncased")
+    training = Training("distilbert-base-uncased", early_stopper=early_stopper)
     print("\nloading data..")
     training.dataloader("emotion")
     print("\nencoding tweets..")
@@ -115,6 +117,4 @@ if __name__ == "__main__":
         saved_model_name="distilbert-base-finetuned-for-tweet-classification",
     )
     print("\ntraining model..")
-    results = training.train_model(
-        "distilbert-base-finetuned-for-tweet-classification-two-additional-epochs"
-    )
+    results = training.train_model("can-be-deleted", epochs=1)

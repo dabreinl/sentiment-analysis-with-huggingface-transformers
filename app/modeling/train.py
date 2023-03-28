@@ -1,4 +1,6 @@
 import torch
+import mlflow
+import pandas as pd
 from torch import nn
 from datasets import load_metric
 from tqdm import tqdm
@@ -118,37 +120,56 @@ class Model_training:
             "lrs": [],
         }
 
-        for epoch in tqdm(range(epochs)):
-            train_loss, train_f1, train_acc = self.train_phase(
-                optimizer=optimizer,
-                train_dataloader=train_dataloader,
-                lr_scheduler=scheduler,
-            )
-            eval_loss, eval_f1, eval_acc = self.eval_phase(
-                eval_dataloader=eval_dataloader
-            )
-            current_lr = optimizer.param_groups[0]["lr"]
+        if model_save_name is None:
+            model_name = "unkown"
+        else:
+            model_name = model_save_name
 
-            print(
-                f"Epoch {epoch+1}, Current LR: {current_lr}:\nTrain Loss: {train_loss:.5f} | Train F1: {train_f1:.5f} | Train Acc: {train_acc:.5f}\nValidation Loss: {eval_loss:.5f} | Validation F1: {eval_f1:.5f} | Validation Acc: {eval_acc:.5f}\n"
-            )
+        with mlflow.start_run(
+            run_name=f"{model_name}-{pd.to_datetime('today').isoformat()}"
+        ):
+            run = mlflow.active_run()
+            run_id = run.info.run_id
+            print(f"run_id: {run_id}; status{run.info.status}")
 
-            # Update results dictionary
-            results["train_loss"].append(train_loss)
-            results["train_f1"].append(train_f1)
-            results["val_loss"].append(eval_loss)
-            results["val_f1"].append(eval_f1)
-            results["lrs"].append(current_lr)
-
-            if early_stopper is not None:
-                if early_stopper.early_stop(eval_loss):
-                    print("Stopping Training..")
-                    break
-
-            if model_save_name is not None:
-                torch.save(
-                    self.model.state_dict(),
-                    f"app/modeling/models/{model_save_name}.pth",
+            for epoch in tqdm(range(epochs)):
+                train_loss, train_f1, train_acc = self.train_phase(
+                    optimizer=optimizer,
+                    train_dataloader=train_dataloader,
+                    lr_scheduler=scheduler,
                 )
+                eval_loss, eval_f1, eval_acc = self.eval_phase(
+                    eval_dataloader=eval_dataloader
+                )
+                current_lr = optimizer.param_groups[0]["lr"]
+
+                print(
+                    f"Epoch {epoch+1}, Current LR: {current_lr}:\nTrain Loss: {train_loss:.5f} | Train F1: {train_f1:.5f} | Train Acc: {train_acc:.5f}\nValidation Loss: {eval_loss:.5f} | Validation F1: {eval_f1:.5f} | Validation Acc: {eval_acc:.5f}\n"
+                )
+
+                # Update results dictionary
+                # TODO maybe just use zip() and iterate
+                results["train_loss"].append(train_loss)
+                results["train_f1"].append(train_f1)
+                results["val_loss"].append(eval_loss)
+                results["val_f1"].append(eval_f1)
+                results["lrs"].append(current_lr)
+
+                if early_stopper is not None:
+                    if early_stopper.early_stop(eval_loss):
+                        print("Stopping Training..")
+                        break
+
+                mlflow.log_metric(key="train_loss", value=train_loss, step=epoch)
+                mlflow.log_metric(key="train_f1", value=train_f1, step=epoch)
+                mlflow.log_metric(key="val_loss", value=eval_loss, step=epoch)
+                mlflow.log_metric(key="val_f1", value=eval_f1, step=epoch)
+
+                if model_save_name is not None:
+                    path_to_model = f"app/modeling/models/{model_save_name}.pth"
+                    torch.save(
+                        self.model.state_dict(),
+                        path_to_model,
+                    )
 
         return results

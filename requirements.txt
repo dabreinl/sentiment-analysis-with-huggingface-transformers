@@ -1,5 +1,6 @@
 datasets==2.10.1
 fastapi==0.95.0
+mlflow==2.2.2
 numpy==1.23.4
 pandas==1.5.1
 pydantic==1.10.7
