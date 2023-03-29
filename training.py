@@ -6,7 +6,8 @@ from transformers import AutoTokenizer, AutoConfig, AutoModel, DataCollatorWithP
 from torch.utils.data import DataLoader
 from app.modeling.model import TweetClassificationModel
 from app.modeling.train import Model_training
-from app.modeling.model_utils import EarlyStopper
+from app.modeling.utils.model_utils import EarlyStopper
+from app.modeling.utils.data_utils import get_balanced_dataset
 
 
 class Training:
@@ -32,15 +33,18 @@ class Training:
             return_tensors="pt",
         )
 
-    def _create_encoded_ds(self):
+    def _create_encoded_ds(self, imbalanced=False):
         print("\nencoding tweets..")
-        self.ds_encoded = self.ds.map(
-            self._tokenize_batch, batched=True, batch_size=None
-        )
+        if imbalanced:
+            self.ds_encoded = get_balanced_dataset(self.ds, self.tokenizer)
+        else:
+            self.ds_encoded = self.ds.map(
+                self._tokenize_batch, batched=True, batch_size=None
+            )  # TODO: Could just put this before if -> is double
 
-        self.ds_encoded.set_format(
-            "torch", columns=["input_ids", "attention_mask", "label"]
-        )
+            self.ds_encoded.set_format(
+                "torch", columns=["input_ids", "attention_mask", "label"]
+            )
 
     def _create_dataloader(self, batch_size, encoded_data):
         print("\ncreating dataloader..")
@@ -97,13 +101,16 @@ class Training:
 
 
 if __name__ == "__main__":
-    early_stopper = EarlyStopper(patience=0)
+    early_stopper = EarlyStopper(patience=1)
     training = Training("distilbert-base-uncased", early_stopper=early_stopper)
     training._dataloader("emotion")
-    training._create_encoded_ds()
+    training._create_encoded_ds(imbalanced=True)
     training._create_dataloader(32, training.ds_encoded)
     training._load_model(
-        load_model=True,
-        saved_model_name="distilbert-base-finetuned-for-tweet-classification",
+        load_model=False,
+        saved_model_name="distilbert-base-finetuned-for-tweet-classification-with-random-oversampling",
     )
-    results = training._train_model("can-be-deleted", epochs=1)
+    results = training._train_model(
+        "distilbert-base-finetuned-for-tweet-classification-with-random-oversampling",
+        epochs=10,
+    )
