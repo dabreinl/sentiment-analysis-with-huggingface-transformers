@@ -18,13 +18,12 @@ class Training:
         self.early_stopper = early_stopper
         self.device = device
 
-    def dataloader(self, dataset_name: str):
+    def _dataloader(self, dataset_name: str):
+        print("\nloading data..")
         self.ds = load_dataset(dataset_name)
         self.class_names = self.ds["train"].features["label"].names
 
-        return None
-
-    def tokenize_batch(self, batch):
+    def _tokenize_batch(self, batch):
         return self.tokenizer(
             batch["text"],
             padding=True,
@@ -33,18 +32,18 @@ class Training:
             return_tensors="pt",
         )
 
-    def create_encoded_ds(self):
+    def _create_encoded_ds(self):
+        print("\nencoding tweets..")
         self.ds_encoded = self.ds.map(
-            self.tokenize_batch, batched=True, batch_size=None
+            self._tokenize_batch, batched=True, batch_size=None
         )
 
         self.ds_encoded.set_format(
             "torch", columns=["input_ids", "attention_mask", "label"]
         )
 
-        return None
-
-    def create_dataloader(self, batch_size, encoded_data):
+    def _create_dataloader(self, batch_size, encoded_data):
+        print("\ncreating dataloader..")
         data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
 
         self.train_dataloader = DataLoader(
@@ -66,9 +65,8 @@ class Training:
             collate_fn=data_collator,
         )
 
-        return None
-
-    def load_model(self, load_model=True, saved_model_name=None):
+    def _load_model(self, load_model=True, saved_model_name=None):
+        print("\nloading model..")
         model = AutoModel.from_pretrained(self.model_checkpoint)
         custom_model = TweetClassificationModel(
             checkpoint=self.model_checkpoint, num_classes=len(self.class_names)
@@ -81,9 +79,8 @@ class Training:
 
         self.model = custom_model
 
-        return None
-
-    def train_model(self, model_name, epochs, lr=1e-5):
+    def _train_model(self, model_name, epochs, lr=1e-5):
+        print("\ntraining model..")
         parameters = self.model.parameters()
         optimizer = torch.optim.AdamW(parameters, lr)
 
@@ -98,23 +95,15 @@ class Training:
             model_save_name=model_name,
         )
 
-        return train_results
-
 
 if __name__ == "__main__":
-    early_stopper = EarlyStopper()
-    print("\ncreating training object..")
+    early_stopper = EarlyStopper(patience=0)
     training = Training("distilbert-base-uncased", early_stopper=early_stopper)
-    print("\nloading data..")
-    training.dataloader("emotion")
-    print("\nencoding tweets..")
-    training.create_encoded_ds()
-    print("\ncreating dataloader..")
-    training.create_dataloader(32, training.ds_encoded)
-    print("\nloading model..")
-    training.load_model(
+    training._dataloader("emotion")
+    training._create_encoded_ds()
+    training._create_dataloader(32, training.ds_encoded)
+    training._load_model(
         load_model=True,
         saved_model_name="distilbert-base-finetuned-for-tweet-classification",
     )
-    print("\ntraining model..")
-    results = training.train_model("can-be-deleted", epochs=1)
+    results = training._train_model("can-be-deleted", epochs=1)
