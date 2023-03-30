@@ -29,7 +29,7 @@ class Training:
         self.early_stopper = early_stopper
         self.device = device
 
-    def _dataloader(self, dataset_name: str):
+    def _load_data(self, dataset_name: str):
         print("\nloading data..")
         self.ds = load_dataset(dataset_name)
         self.class_names = self.ds["train"].features["label"].names
@@ -53,7 +53,9 @@ class Training:
             elif balancer == "augmentation":
                 self.ds = create_balanced_datasets(self.ds)
                 self.ds.set_format("pandas")
-                print(self.ds["train"][:][["label"]].value_counts())
+                print(
+                    f'train examples per label:\n{self.ds["train"][:][["label"]].value_counts()}'
+                )
                 self.ds.reset_format()
                 self.ds_encoded = self.ds.map(
                     self._tokenize_batch, batched=True, batch_size=None
@@ -144,7 +146,7 @@ if __name__ == "__main__":
     config = TrainingConfig()
     early_stopper = EarlyStopper(patience=config.early_stopping_patience)
     training = Training(config.model_checkpoint, early_stopper=early_stopper)
-    training._dataloader(config.dataset_name)
+    training._load_data(config.dataset_name)
     training._create_encoded_ds(imbalanced=config.imbalanced, balancer=config.balancer)
     training._create_dataloader(config.batch_size, training.ds_encoded)
     training._load_model(
