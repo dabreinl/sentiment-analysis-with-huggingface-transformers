@@ -14,7 +14,7 @@ class InputTweet(BaseModel):
 config = {
     "model_checkpoint": "distilbert-base-uncased",
     "class_names": ["sadness", "joy", "love", "anger", "fear", "surprise"],
-    "saved_model_name": "distilbert-base-finetuned-for-tweet-classification-with-random-oversampling",
+    "saved_model_name": "distilbert-base-finetuned-for-tweet-classification-with-random-oversampling_with_scheduler",
 }
 
 

@@ -2,12 +2,22 @@ import torch
 import transformers
 import pandas as pd
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoConfig, AutoModel, DataCollatorWithPadding
+from transformers import (
+    AutoTokenizer,
+    AutoConfig,
+    AutoModel,
+    DataCollatorWithPadding,
+    get_linear_schedule_with_warmup,
+)
 from torch.utils.data import DataLoader
+from training_config import TrainingConfig
 from app.modeling.model import TweetClassificationModel
 from app.modeling.train import Model_training
 from app.modeling.utils.model_utils import EarlyStopper
-from app.modeling.utils.data_utils import get_balanced_dataset
+from app.modeling.utils.data_utils import (
+    get_balanced_dataset_random_oversampler,
+    create_balanced_datasets,
+)
 
 
 class Training:
@@ -33,10 +43,28 @@ class Training:
             return_tensors="pt",
         )
 
-    def _create_encoded_ds(self, imbalanced=False):
+    def _create_encoded_ds(self, imbalanced=False, balancer="random_oversampler"):
         print("\nencoding tweets..")
         if imbalanced:
-            self.ds_encoded = get_balanced_dataset(self.ds, self.tokenizer)
+            if balancer == "random_oversampler":
+                self.ds_encoded = get_balanced_dataset_random_oversampler(
+                    self.ds, self.tokenizer
+                )
+            elif balancer == "augmentation":
+                self.ds = create_balanced_datasets(self.ds)
+                self.ds.set_format("pandas")
+                print(self.ds["train"][:][["label"]].value_counts())
+                self.ds.reset_format()
+                self.ds_encoded = self.ds.map(
+                    self._tokenize_batch, batched=True, batch_size=None
+                )  # TODO repitition
+                self.ds_encoded.set_format(
+                    "torch", columns=["input_ids", "attention_mask", "label"]
+                )
+            else:
+                raise ValueError(
+                    "balancer must be one of the following: ['random_oversampler', 'augmentation']"
+                )
         else:
             self.ds_encoded = self.ds.map(
                 self._tokenize_batch, batched=True, batch_size=None
@@ -83,10 +111,21 @@ class Training:
 
         self.model = custom_model
 
-    def _train_model(self, model_name, epochs, lr=1e-5):
+    def _train_model(self, model_name, epochs, lr=1e-5, scheduler=False):
         print("\ntraining model..")
         parameters = self.model.parameters()
+
         optimizer = torch.optim.AdamW(parameters, lr)
+
+        # If we use scheduler set the warmup steps to 10% of total training steps
+        if scheduler:
+            num_training_steps = len(self.train_dataloader) * epochs
+            num_warmup_steps = int(num_training_steps * 0.1)
+            scheduler = get_linear_schedule_with_warmup(
+                optimizer=optimizer,
+                num_warmup_steps=num_warmup_steps,
+                num_training_steps=num_training_steps,
+            )
 
         trainer = Model_training(model=self.model, device=self.device)
 
@@ -97,20 +136,21 @@ class Training:
             epochs=epochs,
             early_stopper=self.early_stopper,
             model_save_name=model_name,
+            scheduler=scheduler,
         )
 
 
 if __name__ == "__main__":
-    early_stopper = EarlyStopper(patience=1)
-    training = Training("distilbert-base-uncased", early_stopper=early_stopper)
-    training._dataloader("emotion")
-    training._create_encoded_ds(imbalanced=True)
-    training._create_dataloader(32, training.ds_encoded)
+    config = TrainingConfig()
+    early_stopper = EarlyStopper(patience=config.early_stopping_patience)
+    training = Training(config.model_checkpoint, early_stopper=early_stopper)
+    training._dataloader(config.dataset_name)
+    training._create_encoded_ds(imbalanced=config.imbalanced, balancer=config.balancer)
+    training._create_dataloader(config.batch_size, training.ds_encoded)
     training._load_model(
-        load_model=False,
-        saved_model_name="distilbert-base-finetuned-for-tweet-classification-with-random-oversampling",
+        load_model=config.load_model,
+        saved_model_name=config.saved_model_name,
     )
     results = training._train_model(
-        "distilbert-base-finetuned-for-tweet-classification-with-random-oversampling",
-        epochs=10,
+        config.model_save_name, epochs=config.epochs, scheduler=config.scheduler
     )

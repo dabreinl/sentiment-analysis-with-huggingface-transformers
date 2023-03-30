@@ -27,14 +27,14 @@ class Model_training:
         self.model = model
         self.device = device
 
-    def train_phase(self, optimizer, train_dataloader, lr_scheduler=None):
+    def train_phase(self, optimizer, train_dataloader, lr_scheduler=False):
         self.model = self.model.to(self.device)
 
         train_loss = 0
         f1_score = 0
         acc_score = 0
 
-        for batch in train_dataloader:
+        for batch in tqdm(train_dataloader, leave=False):
             batch = {k: v.to(self.device) for k, v in batch.items()}
 
             self.model.train()
@@ -61,7 +61,7 @@ class Model_training:
 
             optimizer.step()
 
-            if lr_scheduler is not None:
+            if lr_scheduler:
                 lr_scheduler.step()
 
         train_loss = train_loss / len(train_dataloader)
@@ -110,7 +110,7 @@ class Model_training:
         optimizer,
         early_stopper=None,
         model_save_name=None,
-        scheduler=None,
+        scheduler=False,
     ):
         results = {
             "train_loss": [],
@@ -130,9 +130,9 @@ class Model_training:
         ):
             run = mlflow.active_run()
             run_id = run.info.run_id
-            print(f"run_id: {run_id}; status{run.info.status}")
+            print(f"\nrun_id: {run_id}; status{run.info.status}")
 
-            for epoch in tqdm(range(epochs)):
+            for epoch in range(epochs):
                 train_loss, train_f1, train_acc = self.train_phase(
                     optimizer=optimizer,
                     train_dataloader=train_dataloader,
