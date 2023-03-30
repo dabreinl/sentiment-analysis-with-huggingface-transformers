@@ -41,7 +41,7 @@ class Training:
             truncation=True,
             add_special_tokens=True,
             return_tensors="pt",
-        )
+        )  # TODO maybe put this into another script as it is used eg by data_utils in random oversampling and also here -> so it does not occur multiple times
 
     def _create_encoded_ds(self, imbalanced=False, balancer="random_oversampler"):
         print("\nencoding tweets..")

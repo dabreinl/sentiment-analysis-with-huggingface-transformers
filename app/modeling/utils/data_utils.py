@@ -15,8 +15,8 @@ def get_balanced_dataset_random_oversampler(
     # Tokenize the dataset and add 'input_ids' and 'attention_mask' features
     def tokenize_and_encode(batch):
         encoding = tokenizer(
-            batch["text"], truncation=True, padding="max_length", max_length=128
-        )
+            batch["text"], truncation=True, padding=True, add_special_tokens=True
+        )  # TODO think about if it maybe makes sense to remove the max_length and add special add_special_tokens
         return {**batch, **encoding}
 
     dataset = dataset.map(tokenize_and_encode, batched=True)
