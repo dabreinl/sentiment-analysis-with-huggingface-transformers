@@ -1,6 +1,6 @@
-# sentiment-analysis-with-huggingface-transformers
+# sentiment-analysis-with-huggingface-transformers 🤗
 
-This repository provides fine tuning of distilbert transformer on the emotions dataset containing tweets and labels **('sadness', 'joy', 'love', 'anger', 'fear', 'surprise')**.
+This repository provides fine tuning of distilbert transformer on the huggingface emotion dataset containing tweets and labels **('sadness', 'joy', 'love', 'anger', 'fear', 'surprise')**.
 
 
 The trained model is then served with a very simple frontend.
