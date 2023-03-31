@@ -3,7 +3,9 @@
 This repository provides fine tuning of distilbert transformer on the huggingface emotion dataset containing tweets and labels **('sadness', 'joy', 'love', 'anger', 'fear', 'surprise')**.
 
 
-The trained model is then served with a very simple frontend.
+The trained model is then served with a very simple frontend:
+
+<img width="721" alt="Screenshot 2023-04-01 at 00 34 12" src="https://user-images.githubusercontent.com/114862909/229244767-139fe4b2-c829-4db7-a566-e5367edf4014.png">
 
 In order to use the application you should first train a model which can be done by running the training pipeline: 
 ```
