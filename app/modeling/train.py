@@ -40,7 +40,14 @@ def compute_metrics(
 
 
 class Model_training:
-    def __init__(self, model, device):
+    def __init__(self, model: torch.nn.Module, device: torch.device):
+        """
+        Initialize the Model_training class for training and evaluating a model.
+
+        Args:
+            model (torch.nn.Module): The model to be trained and evaluated.
+            device (torch.device): The device to run the model on.
+        """
         self.model = model
         self.device = device
 

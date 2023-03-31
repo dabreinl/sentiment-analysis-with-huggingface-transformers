@@ -2,7 +2,14 @@ import numpy as np
 
 
 class EarlyStopper:
-    def __init__(self, patience=0, min_delta=0):
+    def __init__(self, patience: int = 0, min_delta: float = 0):
+        """
+        Initialize the EarlyStopper class, which is used to stop the training process early if the validation loss does not improve for a certain number of epochs.
+
+        Args:
+            patience (int, optional): The number of consecutive epochs with no improvement in validation loss before stopping the training. Defaults to 0.
+            min_delta (float, optional): The minimum change in the validation loss to qualify as an improvement. Defaults to 0.
+        """
         self.patience = patience
         self.min_delta = min_delta
         self.counter = 0

@@ -12,6 +12,15 @@ class Inference:
         saved_model_name: str,
         device: torch.device = torch.device("cpu"),
     ):
+        """
+        Initialize the Inference class for tweet classification.
+
+        Args:
+            model_checkpoint (str): The path or identifier of the pre-trained model checkpoint.
+            labels (list[str]): A list of strings representing the class labels.
+            saved_model_name (str): The name of the saved model file (without the extension).
+            device (torch.device, optional): The device to run the model on. Defaults to torch.device("cpu").
+        """
         self.model_checkpoint = model_checkpoint
         self.labels = labels
         self.model = TweetClassificationModel(self.model_checkpoint, len(self.labels))
