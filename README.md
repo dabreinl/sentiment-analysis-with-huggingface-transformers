@@ -17,7 +17,7 @@ In order to then run the application you can just run docker-compose up. You sho
 
 # Some suggestions for further model improvement:
 
-* After analyzing the instances with the highest loss (see visualize-model-performance notebook) it could be seen that some instances were incorrectly labeled -> by relabeling these instances, the model performance could definitely be improved
+* After analyzing the instances with the highest loss (see visualize-model-performance notebook), we saw that some instances were incorrectly labeled -> by relabeling these instances, the model performance could definitely be improved
 
 * Additional resampling methods could be experimented with to further improve model performance
 
