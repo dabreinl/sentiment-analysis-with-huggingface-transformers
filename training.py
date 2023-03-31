@@ -1,7 +1,7 @@
 import torch
 import transformers
 import pandas as pd
-from datasets import load_dataset
+from datasets import load_dataset, DatasetDict
 from transformers import (
     AutoTokenizer,
     AutoConfig,
@@ -22,19 +22,45 @@ from app.modeling.utils.data_utils import (
 
 class Training:
     def __init__(
-        self, model_checkpoint, early_stopper=None, device=torch.device("mps")
+        self,
+        model_checkpoint: str,
+        early_stopper: EarlyStopper = None,
+        device: torch.device = torch.device("mps"),
     ):
+        """
+        Initialize the Training class.
+
+        Args:
+            model_checkpoint (str): The model checkpoint to be used for training.
+            early_stopper (EarlyStopper, optional): An instance of the EarlyStopper class, used for early stopping during training. Defaults to None.
+            device (torch.device, optional): The device to be used for model training. Defaults to torch.device("mps").
+        """
         self.model_checkpoint = model_checkpoint
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_checkpoint)
         self.early_stopper = early_stopper
         self.device = device
 
     def _load_data(self, dataset_name: str):
+        """
+        Load the dataset using the given dataset name.
+
+        Args:
+            dataset_name (str): The name of the dataset to be loaded.
+        """
         print("\nloading data..")
         self.ds = load_dataset(dataset_name)
         self.class_names = self.ds["train"].features["label"].names
 
-    def _tokenize_batch(self, batch):
+    def _tokenize_batch(self, batch: DatasetDict):
+        """
+        Tokenize a batch of text.
+
+        Args:
+            batch (DatasetDict): A DatasetDict containing a batch of text to be tokenized.
+
+        Returns:
+            DatasetDict: A dictionary containing the tokenized batch.
+        """
         return self.tokenizer(
             batch["text"],
             padding=True,
@@ -43,7 +69,16 @@ class Training:
             return_tensors="pt",
         )  # TODO maybe put this into another script as it is used eg by data_utils in random oversampling and also here -> so it does not occur multiple times
 
-    def _create_encoded_ds(self, imbalanced=False, balancer="random_oversampler"):
+    def _create_encoded_ds(
+        self, imbalanced: bool = False, balancer: str = "random_oversampler"
+    ):
+        """
+        Create an encoded dataset based on the given parameters.
+
+        Args:
+            imbalanced (bool, optional): Whether the dataset is imbalanced or not. Defaults to False.
+            balancer (str, optional): The balancing technique to be used if the dataset is imbalanced (random_oversampler or augmentation). Defaults to "random_oversampler".
+        """
         print("\nencoding tweets..")
         if imbalanced:
             if balancer == "random_oversampler":
@@ -76,7 +111,14 @@ class Training:
                 "torch", columns=["input_ids", "attention_mask", "label"]
             )
 
-    def _create_dataloader(self, batch_size, encoded_data):
+    def _create_dataloader(self, batch_size: int, encoded_data: DatasetDict):
+        """
+        Create dataloaders for training, validation, and testing.
+
+        Args:
+            batch_size (int): The batch size to be used in the DataLoader.
+            encoded_data (DatasetDict): The encoded dataset to be used for creating the dataloaders.
+        """
         print("\ncreating dataloader..")
         data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
 
@@ -99,7 +141,14 @@ class Training:
             collate_fn=data_collator,
         )
 
-    def _load_model(self, load_model=True, saved_model_name=None):
+    def _load_model(self, load_model: bool = True, saved_model_name: str = None):
+        """
+        Load the model for training.
+
+        Args:
+            load_model (bool, optional): Whether to load a pre-trained model or not. Defaults to True.
+            saved_model_name (str, optional): The name of the saved model to be loaded. Defaults to None.
+        """
         print("\nloading model..")
         model = AutoModel.from_pretrained(self.model_checkpoint)
         custom_model = TweetClassificationModel(
@@ -113,7 +162,18 @@ class Training:
 
         self.model = custom_model
 
-    def _train_model(self, model_name, epochs, lr=1e-5, scheduler=False):
+    def _train_model(
+        self, model_name: str, epochs: int, lr: float = 1e-5, scheduler=False
+    ):
+        """
+        Train the model using the specified parameters.
+
+        Args:
+            model_name (str): The name of the model to be saved.
+            epochs (int): The number of epochs for training.
+            lr (float, optional): The learning rate to be used during training. Defaults to 1e-5.
+            scheduler (bool, optional): Whether to use a learning rate scheduler or not. Defaults to False.
+        """
         print("\ntraining model..")
         parameters = self.model.parameters()
 

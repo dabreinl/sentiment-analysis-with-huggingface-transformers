@@ -1,22 +1,23 @@
 class TrainingConfig:
     """
-    This is the central Config Class which is used to define all the hyperparameters used in Training
+    TrainingConfig is a configuration class that contains hyperparameters and other settings
+    for the training process. It centralizes the values for easy customization and management.
     """
 
     def __init__(
         self,
-        model_checkpoint="distilbert-base-uncased",
-        dataset_name="emotion",
-        batch_size=32,
-        imbalanced=True,
-        balancer="augmentation",
-        load_model=False,
-        saved_model_name="distilbert-base-finetuned-for-tweet-classification",
-        model_save_name="distilbert-base-finetuned-for-tweet-classification-with-augmentation-and-scheduler",
-        epochs=10,
-        lr=1e-5,
-        scheduler=True,
-        early_stopping_patience=1,
+        model_checkpoint: str = "distilbert-base-uncased",
+        dataset_name: str = "emotion",
+        batch_size: int = 32,
+        imbalanced: bool = True,
+        balancer: str = "augmentation",
+        load_model: bool = False,
+        saved_model_name: str = "distilbert-base-finetuned-for-tweet-classification",
+        model_save_name: str = "distilbert-base-finetuned-for-tweet-classification-with-augmentation-and-scheduler",
+        epochs: int = 10,
+        lr: float = 1e-5,
+        scheduler: bool = True,
+        early_stopping_patience: int = 1,
     ):
         self.model_checkpoint = model_checkpoint
         self.dataset_name = dataset_name

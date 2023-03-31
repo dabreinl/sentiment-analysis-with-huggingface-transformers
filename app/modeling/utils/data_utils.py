@@ -10,8 +10,22 @@ import pandas as pd
 
 
 def get_balanced_dataset_random_oversampler(
-    dataset, tokenizer, resampler=RandomOverSampler(random_state=42)
+    dataset: DatasetDict,
+    tokenizer: AutoTokenizer,
+    resampler=RandomOverSampler(random_state=42),
 ):
+    """
+    Balance the dataset using random oversampling technique.
+
+    Args:
+        dataset (DatasetDict): The HuggingFace DatasetDict containing the train, validation, and test splits.
+        tokenizer (AutoTokenizer): The tokenizer to use for tokenizing the dataset.
+        resampler (RandomOverSampler, optional): The oversampling technique to use. Defaults to RandomOverSampler(random_state=42).
+
+    Returns:
+        DatasetDict: The balanced dataset with oversampled instances.
+    """
+
     # Tokenize the dataset and add 'input_ids' and 'attention_mask' features
     def tokenize_and_encode(batch):
         encoding = tokenizer(
@@ -60,7 +74,16 @@ def get_balanced_dataset_random_oversampler(
     return balanced_dataset
 
 
-def balance_dataset(df):
+def balance_dataset(df: pd.DataFrame):
+    """
+    Balance the dataset by augmenting instances of the minority class.
+
+    Args:
+        df (pd.DataFrame): The input dataset as a pandas DataFrame.
+
+    Returns:
+        pd.DataFrame: The balanced dataset with augmented instances.
+    """
     max_class_size = df["label"].value_counts().max()
     balanced_data = pd.DataFrame()
 
@@ -77,7 +100,17 @@ def balance_dataset(df):
     return balanced_data
 
 
-def augment_data(df, num_samples):
+def augment_data(df: pd.DataFrame, num_samples: int):
+    """
+    Augment the given dataset by generating new instances using synonym replacement.
+
+    Args:
+        df (pd.DataFrame): The input dataset as a pandas DataFrame.
+        num_samples (int): The number of samples to generate for augmentation.
+
+    Returns:
+        pd.DataFrame: The augmented dataset with new instances.
+    """
     aug = naw.SynonymAug(aug_src="wordnet", aug_p=0.4)
     augmented_data = pd.DataFrame(columns=["text", "label"])
 
@@ -92,7 +125,16 @@ def augment_data(df, num_samples):
     return augmented_data
 
 
-def create_balanced_datasets(dataset_dict):
+def create_balanced_datasets(dataset_dict: DatasetDict):
+    """
+    Create balanced datasets from the given HuggingFace DatasetDict.
+
+    Args:
+        dataset_dict (DatasetDict): The HuggingFace DatasetDict containing the train, validation, and test splits.
+
+    Returns:
+        DatasetDict: The balanced datasets with augmented instances in the train split.
+    """
     train_df = dataset_dict["train"].to_pandas()
     balanced_train_df = balance_dataset(train_df)
 

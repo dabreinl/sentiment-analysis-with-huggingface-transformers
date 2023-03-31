@@ -8,7 +8,16 @@ class EarlyStopper:
         self.counter = 0
         self.min_validation_loss = np.inf
 
-    def early_stop(self, validation_loss):
+    def early_stop(self, validation_loss: float):
+        """
+        Determine if the training should be stopped early based on the validation loss and the pre-defined patience and min_delta values.
+
+        Args:
+            validation_loss (float): The current validation loss.
+
+        Returns:
+            bool: True if the training should be stopped early, False otherwise.
+        """
         if validation_loss < self.min_validation_loss:
             self.min_validation_loss = validation_loss
             self.counter = 0

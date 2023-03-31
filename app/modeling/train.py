@@ -2,14 +2,30 @@ import torch
 import mlflow
 import pandas as pd
 from torch import nn
-from datasets import load_metric
+from datasets import load_metric, DatasetDict
 from tqdm import tqdm
 from torchmetrics import Accuracy, F1Score
+from app.modeling.utils.model_utils import EarlyStopper
 
 
 def compute_metrics(
-    predictions, batch, num_classes=6, task="multiclass"
+    predictions: torch.tensor,
+    batch: DatasetDict,
+    num_classes: int = 6,
+    task: str = "multiclass",
 ):  # TODO remove hardcoding of classes maybe just implement sklearn versions
+    """
+    Compute the F1 score and accuracy for a given batch of predictions.
+
+    Args:
+        predictions (torch.Tensor): Model's output predictions.
+        batch (DatasetDict): A batch containing input_ids, attention_mask, and labels.
+        num_classes (int, optional): Number of classes for the task. Defaults to 6.
+        task (str, optional): Type of classification task. Defaults to "multiclass".
+
+    Returns:
+        Dict[str, float]: A dictionary containing the F1 score and accuracy.
+    """
     predictions = predictions.cpu()
     true_label = batch["labels"].cpu()
 
@@ -27,7 +43,23 @@ class Model_training:
         self.model = model
         self.device = device
 
-    def train_phase(self, optimizer, train_dataloader, lr_scheduler=False):
+    def train_phase(
+        self,
+        optimizer: torch.optim.optimizer,
+        train_dataloader: torch.utils.data.DataLoader,
+        lr_scheduler: bool = False,
+    ):
+        """
+        Perform a single training phase (epoch) on the model.
+
+        Args:
+            optimizer (torch.optim.Optimizer): The optimizer used for training.
+            train_dataloader (torch.utils.data.DataLoader): The dataloader for the training dataset.
+            lr_scheduler (Optional[bool]): The learning rate scheduler. Set to False if not used. Defaults to False.
+
+        Returns:
+            Tuple[float, float, float]: The average training loss, F1 score, and accuracy for the epoch.
+        """
         self.model = self.model.to(self.device)
 
         train_loss = 0
@@ -70,7 +102,16 @@ class Model_training:
 
         return train_loss, f1_score, acc_score
 
-    def eval_phase(self, eval_dataloader):
+    def eval_phase(self, eval_dataloader: torch.utils.data.DataLoader):
+        """
+        Perform an evaluation phase on the model.
+
+        Args:
+            eval_dataloader (torch.utils.data.DataLoader): The dataloader for the evaluation dataset.
+
+        Returns:
+            Tuple[float, float, float]: The average evaluation loss, F1 score, and accuracy.
+        """
         eval_loss = 0
         f1_score = 0
         acc_score = 0
@@ -104,14 +145,29 @@ class Model_training:
 
     def train(
         self,
-        epochs,
-        train_dataloader,
-        eval_dataloader,
-        optimizer,
-        early_stopper=None,
-        model_save_name=None,
-        scheduler=False,
+        epochs: int,
+        train_dataloader: torch.utils.data.DataLoader,
+        eval_dataloader: torch.utils.data.DataLoader,
+        optimizer: torch.optim.optimizer,
+        early_stopper: EarlyStopper = None,
+        model_save_name: str = None,
+        scheduler: bool = False,
     ):
+        """
+        Train the model for a given number of epochs and evaluate at each epoch.
+
+        Args:
+            epochs (int): The number of training epochs.
+            train_dataloader (torch.utils.data.DataLoader): The dataloader for the training dataset.
+            eval_dataloader (torch.utils.data.DataLoader): The dataloader for the evaluation dataset.
+            optimizer (torch.optim.Optimizer): The optimizer used for training.
+            early_stopper (Optional[EarlyStopper]): An instance of EarlyStopper for early stopping. Defaults to None.
+            model_save_name (Optional[str]): The name used for saving the model. Defaults to None.
+            scheduler (Optional[bool]): The learning rate scheduler. Set to False if not used. Defaults to False.
+
+        Returns:
+            Dict[str, List[float]]: A dictionary containing the training and validation losses, F1 scores, and learning rates for each epoch.
+        """
         results = {
             "train_loss": [],
             "train_f1": [],
