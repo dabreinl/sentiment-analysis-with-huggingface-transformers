@@ -11,7 +11,7 @@ $python3 training.py
 ```
 After running the pipeline you can reference the trained model in the main.py config dictionary.
 
-In order to then run the application you can just run docker-compose up, you should then be able to see the frontend at your localhost.
+In order to then run the application you can just run docker-compose up. You should now be able to see the frontend at your localhost.
 
 # Some suggestions for further model improvement:
 
