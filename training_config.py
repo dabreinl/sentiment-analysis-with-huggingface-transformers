@@ -1,3 +1,6 @@
+import torch
+
+
 class TrainingConfig:
     """
     TrainingConfig is a configuration class that contains hyperparameters and other settings
@@ -12,6 +15,7 @@ class TrainingConfig:
         imbalanced: bool = True,
         balancer: str = "augmentation",
         load_model: bool = False,
+        device: torch.device = torch.device("mps"),
         saved_model_name: str = "distilbert-base-finetuned-for-tweet-classification",
         model_save_name: str = "distilbert-base-finetuned-for-tweet-classification-with-augmentation-and-scheduler",
         epochs: int = 10,
@@ -25,6 +29,7 @@ class TrainingConfig:
         self.imbalanced = imbalanced
         self.balancer = balancer
         self.load_model = load_model
+        self.device = device
         self.saved_model_name = saved_model_name
         self.model_save_name = model_save_name
         self.epochs = epochs

@@ -205,7 +205,9 @@ class Training:
 if __name__ == "__main__":
     config = TrainingConfig()
     early_stopper = EarlyStopper(patience=config.early_stopping_patience)
-    training = Training(config.model_checkpoint, early_stopper=early_stopper)
+    training = Training(
+        config.model_checkpoint, early_stopper=early_stopper, device=config.device
+    )
     training._load_data(config.dataset_name)
     training._create_encoded_ds(imbalanced=config.imbalanced, balancer=config.balancer)
     training._create_dataloader(config.batch_size, training.ds_encoded)

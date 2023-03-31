@@ -1,6 +1,7 @@
 import torch
 import mlflow
 import pandas as pd
+import os
 from torch import nn
 from datasets import load_metric, DatasetDict
 from tqdm import tqdm
@@ -45,7 +46,7 @@ class Model_training:
 
     def train_phase(
         self,
-        optimizer: torch.optim.optimizer,
+        optimizer: torch.optim.Optimizer,
         train_dataloader: torch.utils.data.DataLoader,
         lr_scheduler: bool = False,
     ):
@@ -148,7 +149,7 @@ class Model_training:
         epochs: int,
         train_dataloader: torch.utils.data.DataLoader,
         eval_dataloader: torch.utils.data.DataLoader,
-        optimizer: torch.optim.optimizer,
+        optimizer: torch.optim.Optimizer,
         early_stopper: EarlyStopper = None,
         model_save_name: str = None,
         scheduler: bool = False,
@@ -222,6 +223,9 @@ class Model_training:
                 mlflow.log_metric(key="val_f1", value=eval_f1, step=epoch)
 
                 if model_save_name is not None:
+                    os.makedirs(
+                        "app/modeling/models", exist_ok=True
+                    )  # if models directory doesnt exist create one
                     path_to_model = f"app/modeling/models/{model_save_name}.pth"
                     torch.save(
                         self.model.state_dict(),
