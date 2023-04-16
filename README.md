@@ -15,7 +15,7 @@ After running the pipeline, you can reference the trained model in the main.py c
 To run the application, you can just run docker-compose up. You should now be able to see the frontend at your localhost.
 
 Some suggestions for further model improvement:
-*After analyzing the instances with the highest loss (see the Visualize Model Performance notebook), we saw that some instances were incorrectly labeled. *By relabeling these instances, the model performance could definitely be improved.
-*Additional resampling methods could be experimented with to further improve model performance.
-*Additional learning rate schedulers could be tested to ensure that the loss function continues to converge to the minimum.
-*In addition to resampling methods, the loss function could be adjusted to pay more attention to observations of underrepresented classes (greater weight).
+* After analyzing the instances with the highest loss (see the Visualize Model Performance notebook), we saw that some instances were incorrectly labeled. * By relabeling these instances, the model performance could definitely be improved.
+* Additional resampling methods could be experimented with to further improve model performance.
+* Additional learning rate schedulers could be tested to ensure that the loss function continues to converge to the minimum.
+* In addition to resampling methods, the loss function could be adjusted to pay more attention to observations of underrepresented classes (greater weight).
