@@ -10,14 +10,16 @@ from transformers import (
     get_linear_schedule_with_warmup,
 )
 from torch.utils.data import DataLoader
-from training_config import TrainingConfig
 from app.modeling.model import TweetClassificationModel
 from app.modeling.train import Model_training
+from app.modeling.utils.general_utils import load_config, setup_logger
 from app.modeling.utils.model_utils import EarlyStopper
 from app.modeling.utils.data_utils import (
     get_balanced_dataset_random_oversampler,
     create_balanced_datasets,
 )
+
+logger = setup_logger()
 
 
 class Training:
@@ -47,7 +49,7 @@ class Training:
         Args:
             dataset_name (str): The name of the dataset to be loaded.
         """
-        print("\nloading data..")
+        logger.info("\nloading data..")
         self.ds = load_dataset(dataset_name)
         self.class_names = self.ds["train"].features["label"].names
 
@@ -79,16 +81,18 @@ class Training:
             imbalanced (bool, optional): Whether the dataset is imbalanced or not. Defaults to False.
             balancer (str, optional): The balancing technique to be used if the dataset is imbalanced (random_oversampler or augmentation). Defaults to "random_oversampler".
         """
-        print("\nencoding tweets..")
+        logger.info("\nencoding tweets..")
         if imbalanced:
             if balancer == "random_oversampler":
+                logger.info("\noversampling data..")
                 self.ds_encoded = get_balanced_dataset_random_oversampler(
                     self.ds, self.tokenizer
                 )
             elif balancer == "augmentation":
+                logger.info("\naugmenting data..")
                 self.ds = create_balanced_datasets(self.ds)
                 self.ds.set_format("pandas")
-                print(
+                logger.info(
                     f'train examples per label:\n{self.ds["train"][:][["label"]].value_counts()}'
                 )
                 self.ds.reset_format()
@@ -149,7 +153,7 @@ class Training:
             load_model (bool, optional): Whether to load a pre-trained model or not. Defaults to True.
             saved_model_name (str, optional): The name of the saved model to be loaded. Defaults to None.
         """
-        print("\nloading model..")
+        logger.info("\nloading model..")
         model = AutoModel.from_pretrained(self.model_checkpoint)
         custom_model = TweetClassificationModel(
             checkpoint=self.model_checkpoint, num_classes=len(self.class_names)
@@ -202,19 +206,28 @@ class Training:
         )
 
 
-if __name__ == "__main__":
-    config = TrainingConfig()
-    early_stopper = EarlyStopper(patience=config.early_stopping_patience)
+def main():
+    config = load_config("config.json")
+    early_stopper = EarlyStopper(patience=config["early_stopping_patience"])
     training = Training(
-        config.model_checkpoint, early_stopper=early_stopper, device=config.device
+        config["model_checkpoint"], early_stopper=early_stopper, device=config["device"]
     )
-    training._load_data(config.dataset_name)
-    training._create_encoded_ds(imbalanced=config.imbalanced, balancer=config.balancer)
-    training._create_dataloader(config.batch_size, training.ds_encoded)
+    training._load_data(config["dataset_name"])
+    training._create_encoded_ds(
+        imbalanced=config["imbalanced"], balancer=config["balancer"]
+    )
+    training._create_dataloader(config["batch_size"], training.ds_encoded)
     training._load_model(
-        load_model=config.load_model,
-        saved_model_name=config.saved_model_name,
+        load_model=config["load_model"],
+        saved_model_name=config["saved_model_name"],
     )
     results = training._train_model(
-        config.model_save_name, epochs=config.epochs, scheduler=config.scheduler
+        config["model_save_name"],
+        epochs=config["epochs"],
+        scheduler=config["scheduler"],
     )
+    return results
+
+
+if __name__ == "__main__":
+    results = main()

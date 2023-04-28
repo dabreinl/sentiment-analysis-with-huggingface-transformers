@@ -87,7 +87,6 @@ def balance_dataset(df: pd.DataFrame):
     max_class_size = df["label"].value_counts().max()
     balanced_data = pd.DataFrame()
 
-    print("\naugmenting data..")
     for class_label in df["label"].unique():
         class_data = df[df["label"] == class_label]
         samples_needed = max_class_size - len(class_data)

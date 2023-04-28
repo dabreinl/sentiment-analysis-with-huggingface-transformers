@@ -1,0 +1,15 @@
+{
+    "model_checkpoint": "distilbert-base-uncased",
+    "dataset_name": "emotion",
+    "batch_size": 32,
+    "imbalanced": true,
+    "balancer": "augmentation",
+    "load_model": false,
+    "device": "mps",
+    "saved_model_name": "distilbert-base-finetuned-for-tweet-classification",
+    "model_save_name": "distilbert-base-finetuned-for-tweet-classification-with-augmentation-and-scheduler",
+    "epochs": 10,
+    "lr": 0.00001,
+    "scheduler": true,
+    "early_stopping_patience": 1
+}

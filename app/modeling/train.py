@@ -85,7 +85,7 @@ class Model_training:
                 labels=batch["labels"],
             )
 
-            predictions = torch.argmax(outputs["logits"], dim=1)
+            predictions = torch.max(outputs["logits"], dim=1).indices
 
             loss = outputs.loss
 
@@ -139,7 +139,7 @@ class Model_training:
             eval_loss += loss.item()
 
             logits = outputs["logits"]
-            predictions = torch.argmax(logits, dim=1)
+            predictions = torch.max(logits, dim=1).indices
 
             metrics = compute_metrics(batch=batch, predictions=predictions)
             f1_score += metrics["f1"]
